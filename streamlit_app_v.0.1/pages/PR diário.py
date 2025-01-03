@@ -13,7 +13,7 @@ img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 st.image(img)
 st.title('PR diário')
 #Leitura do Arquivo, conversão para datetime e criação da data
-df = pd.read_csv('C:\\Users\\Windows\\Documents\\Pedro-Goener\\Projeto Acompanhamento Usinas\\Summer-Goener\\dados\\Dados_treinados\\Tabela_ocorrencias.csv')
+df = pd.read_csv('Dados_treinados/Tabela_ocorrencias.csv')
 df['Tempo'] = pd.to_datetime(df['Tempo'])
 df['Data'] = df['Tempo'].dt.date
 #Agrupamendo DataFrame por Data

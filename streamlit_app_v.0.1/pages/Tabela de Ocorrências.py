@@ -10,7 +10,7 @@ img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 st.image(img)
 st.title('Tabela de Ocorrências')
 #Leitura do Arquivo e conversão para datetime
-df = pd.read_csv('C:\\Users\\Windows\\Documents\\Pedro-Goener\\Projeto Acompanhamento Usinas\\Summer-Goener\\dados\\Dados_treinados\\Tabela_ocorrencias.csv')
+df = pd.read_csv('Dados_treinados/Tabela_ocorrencias.csv')
 df['Tempo'] = pd.to_datetime(df['Tempo'])
 #Filtros
 #Filtro de status
