@@ -1,13 +1,13 @@
 import pandas as pd
 import streamlit as st
 from PIL import Image
-# icon = '.streamlit/Logo_azul_quadrada.PNG'
-# st.set_page_config(page_title="Tabela de Ocorrencias", layout="wide",page_icon=icon)
-# img = Image.open('.streamlit/Logo_goener_colorida.png')
-# # Redimensionar a imagem (alterando a altura e mantendo a proporção)
-# img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
-# # Exibir a imagem redimensionada
-# st.image(img)
+icon = '.streamlit/Logo_azul_quadrada.PNG'
+st.set_page_config(page_title="Tabela de Ocorrencias", layout="wide",page_icon=icon)
+img = Image.open('.streamlit/Logo_goener_colorida.png')
+# Redimensionar a imagem (alterando a altura e mantendo a proporção)
+img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
+# Exibir a imagem redimensionada
+st.image(img)
 st.title('Tabela de Ocorrências')
 #Leitura do Arquivo e conversão para datetime
 df = pd.read_csv('Dados_treinados/Tabela_ocorrencias.csv')
