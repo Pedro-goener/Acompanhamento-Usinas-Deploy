@@ -7,13 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 icon_path = os.path.join(current_dir,'.streamlit','Logo_azul_quadrada.PNG')
 #Achando o caminho da logo
 img_path = os.path.join(current_dir,'.streamlit','Logo_goener_colorida.png')
-st.set_page_config(page_title="Goener", layout="wide",page_icon=icon_path,theme={
-        "primaryColor": "#6A994E",
-        "backgroundColor": "#F4F4F9",
-        "secondaryBackgroundColor": "#A7C957",
-        "textColor": "#386641",
-        "font": "sans serif"
-    })
+st.set_page_config(page_title="Goener", layout="wide",page_icon=icon_path)
 # Carregar a imagem com Pillow
 img = Image.open(img_path)
 
