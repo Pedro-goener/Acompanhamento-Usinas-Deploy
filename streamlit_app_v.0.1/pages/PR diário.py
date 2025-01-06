@@ -4,7 +4,7 @@ import plotly.express as px
 from PIL import Image
 import os
 #Encontra diretório atual
-current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
 icon_path = os.path.join(current_dir,'.streamlit','Logo_azul_quadrada.PNG')
 st.set_page_config(page_title="PR diário", layout="wide",page_icon=icon_path)
@@ -18,7 +18,8 @@ img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 st.image(img)
 st.title('PR diário')
 #Leitura do Arquivo, conversão para datetime e criação da data
-df = pd.read_csv('Dados_treinados/Tabela_ocorrencias.csv')
+file_path = os.path.join(current_dir,'Dados_treinados','Tabela_ocorrencias.csv')
+df = pd.read_csv(file_path)
 df['Tempo'] = pd.to_datetime(df['Tempo'])
 df['Data'] = df['Tempo'].dt.date
 #Agrupamendo DataFrame por Data
