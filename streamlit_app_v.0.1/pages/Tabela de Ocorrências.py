@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 import os
-#Encontra diretório atual
-current_dir = os.path.dirname(os.path.abspath(__file__))
+#Encontra diretório atual principal
+current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
 icon_path = os.path.join(current_dir,'.streamlit','Logo_azul_quadrada.PNG')
 st.set_page_config(page_title="Tabela de Ocorrencias", layout="wide",page_icon=icon_path)
