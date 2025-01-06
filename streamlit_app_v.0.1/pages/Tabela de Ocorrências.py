@@ -1,9 +1,15 @@
 import pandas as pd
 import streamlit as st
 from PIL import Image
-icon = '.streamlit/Logo_azul_quadrada.PNG'
-st.set_page_config(page_title="Tabela de Ocorrencias", layout="wide",page_icon=icon)
-img = Image.open('.streamlit/Logo_goener_colorida.png')
+import os
+#Encontra diretório atual
+current_dir = os.path.dirname(os.path.abspath(__file__))
+#Achando o caminho do icone
+icon_path = os.path.join(current_dir,'.streamlit','Logo_azul_quadrada.PNG')
+st.set_page_config(page_title="Tabela de Ocorrencias", layout="wide",page_icon=icon_path)
+#Achando o caminho da logo
+img_path = os.path.join(current_dir,'.streamlit','Logo_goener_colorida.png')
+img = Image.open(img_path)
 # Redimensionar a imagem (alterando a altura e mantendo a proporção)
 img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 # Exibir a imagem redimensionada
