@@ -10,7 +10,7 @@ icon_path = os.path.join(current_dir,'.streamlit','Logo_azul_quadrada.PNG')
 st.set_page_config(page_title="PR diário", layout="wide",page_icon=icon_path)
 #Achando o caminho da logo e carregando com pillow
 img_path = os.path.join(current_dir,'.streamlit','Logo_goener_colorida.png')
-img = Image.open('.streamlit/Logo_goener_colorida.png')
+img = Image.open(img_path)
 # Redimensionar a imagem (alterando a altura e mantendo a proporção)
 img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 
