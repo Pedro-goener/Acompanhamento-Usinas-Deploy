@@ -11,28 +11,29 @@ st.set_page_config(page_title="Goener", layout="wide",page_icon=icon_path)
 # Aplicar o tema via CSS
 st.markdown("""
     <style>
-        :root {
-            --primary-color: #6A994E;
-            --background-color: #F4F4F9;
-            --secondary-background-color: #A7C957;
-            --text-color: #386641;
+        .main {
+            background-color: #F4F4F9 !important;
         }
 
-        .stApp {
-            background-color: var(--background-color) !important;
+        .stSidebar {
+            background-color: #A7C957 !important;
         }
 
-        .stSidebar .sidebar-content {
-            background-color: var(--secondary-background-color) !important;
-        }
-
-        p, .stMarkdown {
-            color: var(--text-color) !important;
-        }
-
-        .stButton>button {
+        .stButton > button {
+            background-color: #6A994E !important;
             color: white !important;
-            background-color: var(--primary-color) !important;
+        }
+
+        .st-emotion-cache-1y4p8pa {
+            background-color: #F4F4F9 !important;
+        }
+
+        .st-emotion-cache-1544g2x {
+            background-color: #A7C957 !important;
+        }
+
+        div[data-testid="stText"] {
+            color: #386641 !important;
         }
     </style>
 """, unsafe_allow_html=True)
