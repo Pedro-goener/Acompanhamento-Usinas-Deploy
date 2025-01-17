@@ -1,0 +1,10 @@
+streamlit
+plotly
+Pillow
+pandas
+numpy
+scipy
+streamlit_plotly_events
+sqlalchemy
+psycopg2-binary
+streamlit-aggrid
