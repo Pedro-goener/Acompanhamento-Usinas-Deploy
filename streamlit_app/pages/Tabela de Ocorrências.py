@@ -8,7 +8,8 @@ import os
 import sys
 # Adicione o diretório 'utils' ao caminho de importação
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
-from interacao_db import load_and_prepare_data,db_config
+from interacao_db import load_and_prepare_data,db_config,usinas_dict
+from plotagem import plot_time_series
 #Encontra diretório atual principal
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
@@ -29,7 +30,7 @@ st.markdown(f"<h6>Perda dissipada: 3 dias seguidos com PR < 0.95 </h6>", unsafe_
 st.markdown(f"<h6>Dados faltantes: No mínimo 1 dia sem dados </h6>", unsafe_allow_html=True)
 #Tabela inicial de usinas
 st.markdown(f"<h3>Selecione a Usina </h3>", unsafe_allow_html=True)
-usina_df = load_and_prepare_data(db_config,'SELECT * FROM performance_usinas')
+usina_df = load_and_prepare_data(db_config,'SELECT * FROM tabela_usinas')
 #Exibição dataframe interativo
 gb = GridOptionsBuilder.from_dataframe(usina_df)
 gb.configure_selection('single')
@@ -39,19 +40,16 @@ usina_response = AgGrid(
     usina_df,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.SELECTION_CHANGED,
-    theme='streamlit',  # Tema
+    theme='streamlit',
     height=100,
     width='100%',
 )
+#Exibir tabela da usina selecionada
 if usina_response['selected_rows'] is not None:
     usina = usina_response['selected_rows']['Usina'][0]
-    tabelas_usinas = {
-        'Betânia':'tabela_ocorrencias_bet',
-        'Porteiras':'tabela_ocorrencias_por'
-    }
     inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
     #Leitura do Arquivo e conversão para datetime
-    query = f'SELECT * FROM {tabelas_usinas[usina]} WHERE "Inversor" = {inversor}'
+    query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}'
     df = load_and_prepare_data(db_config,query)
     df['Inicio'] = pd.to_datetime(df['Inicio'])
     df['Fim'] = pd.to_datetime(df['Fim'])
@@ -96,26 +94,4 @@ if usina_response['selected_rows'] is not None:
             mask = df_p['Tempo'].dt.date == ini
             df_p_filtrado = df_p[mask]
 
-        # Cálculo das energias real e prevista
-        energia_real = float(np.trapezoid(df_p_filtrado['Potencia Ativa(kW)'], df_p_filtrado['Tempo'])) / (3.6 * 1e12)
-        energia_prevista = float(np.trapezoid(df_p_filtrado['Potencia Ativa(kW) prevista'], df_p_filtrado['Tempo'])) / (
-                    3.6 * 1e12)
-        st.markdown(f"<h3>Energia real: {energia_real:.2f} kWh</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h3>Energia prevista: {energia_prevista:.2f} kWh</h3>", unsafe_allow_html=True)
-        # Exiibição do gráfico
-        df_p_filtrado = df_p_filtrado.sort_values(by='Tempo')
-        fig = px.line(df_p_filtrado, x='Tempo', y=['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)'])
-        # Atualizando o layout para adicionar um nome ao eixo Y
-        fig.update_layout(
-            yaxis_title='Potência Ativa (kW)',  # Nomeando o eixo Y
-        )
-        # Atualizando a cor da linha e tornando-a tracejada para a linha 'Potencia Ativa(kW)'
-        fig.update_traces(
-            line=dict(color='#808000'),  # Verde escuro
-            selector=dict(name='Potencia Ativa(kW)')
-        )
-        fig.update_traces(
-            line=dict(color='#009F98', dash='dash'),  # Azul claro
-            selector=dict(name='Potencia Ativa(kW) prevista')
-        )
-        st.plotly_chart(fig)
+        plot_time_series(df_p_filtrado)

@@ -9,7 +9,8 @@ import sys
 
 # Adicione o diretório 'utils' ao caminho de importação
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
-from interacao_db import load_and_prepare_data,db_config
+from interacao_db import load_and_prepare_data,db_config,usinas_dict
+from plotagem import plot_time_series
 # Encontra diretório atual
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Achando o caminho do icone
@@ -28,14 +29,11 @@ st.image(img)
 #------------------------------------------------------------------#
 st.title('PR diário')
 #Filtros iniciais
-usina = st.selectbox('Selecione a Usina',['Betânia','Porteiras'])
-performance_usinas = {
-    'Betânia':'performance_data_bet',
-    'Porteiras':'performance_data_por'
-}
+usina = st.selectbox('Selecione a Usina',usinas_dict.keys())
+
 inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
 #Leitura do Arquivo e conversão para datetime
-query = f'SELECT * FROM {performance_usinas[usina]} WHERE "Inversor" = {inversor}'
+query = f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]} '
 df = load_and_prepare_data(db_config,query)
 df['Tempo'] = pd.to_datetime(df['Tempo'])
 df['Data'] = df['Tempo'].dt.date
@@ -80,29 +78,7 @@ if selected_points:
     data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
     df_temporal = df[df['Tempo'].dt.date == data_selecionada]
 
-    # Cálculo das energias real e prevista
-    energia_real = float(np.trapezoid(df_temporal['Potencia Ativa(kW)'], df_temporal['Tempo'])) / (3.6 * 1e12)
-    energia_prevista = float(np.trapezoid(df_temporal['Potencia Ativa(kW) prevista'], df_temporal['Tempo'])) / (
-                3.6 * 1e12)
-
-    st.markdown(f"<h3>Energia real: {energia_real:.2f} kWh</h3>", unsafe_allow_html=True)
-    st.markdown(f"<h3>Energia prevista: {energia_prevista:.2f} kWh</h3>", unsafe_allow_html=True)
-
-    # Gráfico da série temporal
-    df_temporal = df_temporal.sort_values(by='Tempo')
-    fig_temporal = px.line(df_temporal, x='Tempo', y=['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)'])
-    fig_temporal.update_layout(
-        yaxis_title='Potência Ativa (kW)',
-    )
-    fig_temporal.update_traces(
-        line=dict(color='#808000'),
-        selector=dict(name='Potencia Ativa(kW)')
-    )
-    fig_temporal.update_traces(
-        line=dict(color='#009F98', dash='dash'),
-        selector=dict(name='Potencia Ativa(kW) prevista')
-    )
-    st.plotly_chart(fig_temporal)
+    plot_time_series(df_temporal)
 
 # Gráfico do PR mensal
 df_mensal['Ano_mes'] = df_mensal['Ano_mes'].astype(str)

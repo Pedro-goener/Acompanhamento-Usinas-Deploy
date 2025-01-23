@@ -18,3 +18,7 @@ db_config = {
         'user': st.secrets["database"]["user"],
         'password': st.secrets["database"]["password"]
 }
+usinas_dict = {
+    'bet01':1,
+    'por01':2
+}
