@@ -85,7 +85,7 @@ if usina_response['selected_rows'] is not None:
 
     #Caso selecione uma linha, exibir série temporal
     if not response['selected_rows'] is None:
-        df_p = load_and_prepare_data(db_config,'SELECT * FROM "Performance_data"')
+        df_p = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}')
         ini = pd.to_datetime(response['selected_rows']['Inicio']).dt.date[0]
         fim = pd.to_datetime(response['selected_rows']['Fim']).dt.date[0]
         if ini < fim:
