@@ -28,36 +28,35 @@ st.image(img)
 
 #------------------------------------------------------------------#
 st.title('PR diário')
-#Filtros iniciais
+#Filtros de usinas
 usina = st.selectbox('Selecione a Usina',usinas_dict.keys())
 
-inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
 #Leitura do Arquivo e conversão para datetime
-query = f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]} '
-df = load_and_prepare_data(db_config,query)
-df['Tempo'] = pd.to_datetime(df['Tempo'])
-df['Data'] = df['Tempo'].dt.date
-df['Ano_mes'] = df['Tempo'].dt.to_period('M')
-# Agrupamento DataFrame por Data
-df_diario = df.groupby('Data', as_index=False)[['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)']].sum()
-df_diario['PR diário'] = df_diario['Potencia Ativa(kW)'] / df_diario['Potencia Ativa(kW) prevista']
-
-# Agrupamento DataFrame por Mês
-df_mensal = df.groupby('Ano_mes', as_index=False)[['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)']].sum()
-df_mensal['PR mensal'] = df_mensal['Potencia Ativa(kW)'] / df_mensal['Potencia Ativa(kW) prevista']
+query = f'SELECT * FROM dados_diarios WHERE "Usina_id" = {usinas_dict[usina]} '
+df_diario = load_and_prepare_data(db_config,query)
+df_diario['Data'] = pd.to_datetime(df_diario['Data'])
+df_diario['Ano_mes'] = df_diario['Data'].dt.to_period('M')
+#Plotagem dos inversores
+fig0 = px.line(df_diario,x='Data',y='PR diario',color='Inversor')
+st.plotly_chart(fig0)
+inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
+df_filtrado = df_diario[df_diario['Inversor'] == inversor]
+# # Agrupamento DataFrame por Mês
+# df_mensal = df_diario.groupby('Ano_mes', as_index=False)[['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)']].sum()
+# df_mensal['PR mensal'] = df_mensal['Potencia Ativa(kW)'] / df_mensal['Potencia Ativa(kW) prevista']
 
 # Filtro Temporal
-data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df['Tempo'].min(), df['Tempo'].max()))
+data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df_diario['Data'].min(), df_diario['Data'].max()))
 if len(data_selecionada) == 2:
     ini, fim = (data_selecionada[0], data_selecionada[1])
-    df_filtrado = df_diario[(df_diario['Data'] >= ini) & (df_diario['Data'] <= fim)]
+    df_filtrado = df_filtrado[(df_filtrado['Data'].dt.date >= ini) & (df_filtrado['Data'].dt.date <= fim)]
 else:
     data_unica = pd.to_datetime(data_selecionada[0]).date()
-    mask = df['Data'] == data_unica
-    df_filtrado = df_diario[mask]
+    mask = df_diario['Data'] == data_unica
+    df_filtrado = df_filtrado[mask]
 
 # Gráfico de barras do PR diário
-fig1 = px.bar(df_filtrado, x='Data', y='PR diário')
+fig1 = px.bar(df_filtrado, x='Data', y='PR diario')
 fig1.update_layout(
     shapes=[
         dict(
@@ -76,12 +75,13 @@ selected_points = plotly_events(fig1)
 # Se houver clique em uma barra
 if selected_points:
     data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
-    df_temporal = df[df['Tempo'].dt.date == data_selecionada]
-
+    df_temporal = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]}')
+    df_temporal['Tempo'] = pd.to_datetime(df_temporal['Tempo'])
+    df_temporal = df_temporal[df_temporal['Tempo'].dt.date == data_selecionada]
     plot_time_series(df_temporal)
 
-# Gráfico do PR mensal
-df_mensal['Ano_mes'] = df_mensal['Ano_mes'].astype(str)
-fig2 = px.bar(df_mensal, x='Ano_mes', y='PR mensal')
-fig2.update_traces(marker=dict(color='#009F98'))
-st.plotly_chart(fig2)
+# # Gráfico do PR mensal
+# df_mensal['Ano_mes'] = df_mensal['Ano_mes'].astype(str)
+# fig2 = px.bar(df_mensal, x='Ano_mes', y='PR mensal')
+# fig2.update_traces(marker=dict(color='#009F98'))
+# st.plotly_chart(fig2)

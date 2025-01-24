@@ -20,5 +20,9 @@ db_config = {
 }
 usinas_dict = {
     'bet01':1,
-    'por01':2
+    'por01':2,
+    'cem01':3,
+    'cem02':4,
+    'jgr01':5,
+    'ara01':6
 }

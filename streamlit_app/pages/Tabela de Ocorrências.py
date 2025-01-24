@@ -41,7 +41,7 @@ usina_response = AgGrid(
     gridOptions=grid_options,
     update_mode=GridUpdateMode.SELECTION_CHANGED,
     theme='streamlit',
-    height=100,
+    height=200,
     width='100%',
 )
 #Exibir tabela da usina selecionada
