@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
 from interacao_db import load_and_prepare_data,db_config,usinas_dict
 from plotagem import plot_time_series
+from filtros import filtro_temporal
 #Encontra diretório atual
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
@@ -28,16 +29,8 @@ query = f'SELECT * FROM energy_data WHERE "Usina_id" = {usinas_dict[usina]}'
 #Leitura do arquivo
 df = load_and_prepare_data(db_config,query)
 # Filtro Temporal
-data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df['Data'].min(), df['Data'].max()))
-if len(data_selecionada) == 2:
-    ini, fim = (data_selecionada[0], data_selecionada[1])
-    df_filtrado = df[(df['Data'].dt.date >= ini) & (df['Data'].dt.date <= fim)]
-else:
-    data_unica = pd.to_datetime(data_selecionada[0]).date()
-    mask = df['Data'] == data_unica
-    df_filtrado = df[mask]
-
-fig = px.bar(df_filtrado,x='Data',y='energia_diaria')
+df_filtrado = filtro_temporal(df)
+fig = px.bar(df_filtrado,x='Tempo',y='energia_diaria')
 fig.update_traces(marker=dict(color='#009F98'))
 st.plotly_chart(fig)
 
