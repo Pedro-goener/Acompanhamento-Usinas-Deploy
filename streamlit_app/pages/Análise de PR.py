@@ -11,6 +11,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
 from interacao_db import load_and_prepare_data,db_config,usinas_dict
 from plotagem import plot_time_series
+from filtros import filtro_temporal
 # Encontra diretório atual
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Achando o caminho do icone
@@ -32,7 +33,7 @@ st.title('PR diário')
 usina = st.selectbox('Selecione a Usina',usinas_dict.keys())
 
 #Leitura do Arquivo e conversão para datetime
-query = f'SELECT * FROM dados_diarios WHERE "Usina_id" = {usinas_dict[usina]} '
+query = f'SELECT * FROM pr_diario WHERE "Usina_id" = {usinas_dict[usina]} '
 df_diario = load_and_prepare_data(db_config,query)
 df_diario['Data'] = pd.to_datetime(df_diario['Data'])
 df_diario['Ano_mes'] = df_diario['Data'].dt.to_period('M')
@@ -45,15 +46,7 @@ df_filtrado = df_diario[df_diario['Inversor'] == inversor]
 # df_mensal = df_diario.groupby('Ano_mes', as_index=False)[['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)']].sum()
 # df_mensal['PR mensal'] = df_mensal['Potencia Ativa(kW)'] / df_mensal['Potencia Ativa(kW) prevista']
 
-# Filtro Temporal
-data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df_diario['Data'].min(), df_diario['Data'].max()))
-if len(data_selecionada) == 2:
-    ini, fim = (data_selecionada[0], data_selecionada[1])
-    df_filtrado = df_filtrado[(df_filtrado['Data'].dt.date >= ini) & (df_filtrado['Data'].dt.date <= fim)]
-else:
-    data_unica = pd.to_datetime(data_selecionada[0]).date()
-    mask = df_diario['Data'] == data_unica
-    df_filtrado = df_filtrado[mask]
+df_filtrado = filtro_temporal(df_filtrado)
 
 # Gráfico de barras do PR diário
 fig1 = px.bar(df_filtrado, x='Data', y='PR diario')

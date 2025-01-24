@@ -78,7 +78,7 @@ if usina_response['selected_rows'] is not None:
         df_filtrado,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
-        theme='streamlit',  # Tema
+        theme='streamlit',
         height=300,
         width='100%',
     )
