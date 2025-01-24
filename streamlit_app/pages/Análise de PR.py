@@ -35,10 +35,10 @@ usina = st.selectbox('Selecione a Usina',usinas_dict.keys())
 #Leitura do Arquivo e conversão para datetime
 query = f'SELECT * FROM pr_diario WHERE "Usina_id" = {usinas_dict[usina]} '
 df_diario = load_and_prepare_data(db_config,query)
-df_diario['Data'] = pd.to_datetime(df_diario['Data'])
-df_diario['Ano_mes'] = df_diario['Data'].dt.to_period('M')
+df_diario['Tempo'] = pd.to_datetime(df_diario['Tempo'])
+df_diario['Ano_mes'] = df_diario['Tempo'].dt.to_period('M')
 #Plotagem dos inversores
-fig0 = px.line(df_diario,x='Data',y='PR diario',color='Inversor')
+fig0 = px.line(df_diario,x='Tempo',y='PR diario',color='Inversor')
 st.plotly_chart(fig0)
 inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
 df_filtrado = df_diario[df_diario['Inversor'] == inversor]
@@ -49,12 +49,12 @@ df_filtrado = df_diario[df_diario['Inversor'] == inversor]
 df_filtrado = filtro_temporal(df_filtrado)
 
 # Gráfico de barras do PR diário
-fig1 = px.bar(df_filtrado, x='Data', y='PR diario')
+fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')
 fig1.update_layout(
     shapes=[
         dict(
             type="line",
-            x0=df_filtrado['Data'].min(), x1=df_filtrado['Data'].max(),
+            x0=df_filtrado['Tempo'].min(), x1=df_filtrado['Tempo'].max(),
             y0=1, y1=1,
             line=dict(color="black", width=2, dash="dash"),
         )
