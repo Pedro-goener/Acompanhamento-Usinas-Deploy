@@ -37,16 +37,16 @@ query = f'SELECT * FROM pr_diario WHERE "Usina_id" = {usinas_dict[usina]} '
 df_diario = load_and_prepare_data(db_config,query)
 df_diario['Tempo'] = pd.to_datetime(df_diario['Tempo'])
 df_diario['Ano_mes'] = df_diario['Tempo'].dt.to_period('M')
+df_filtrado = filtro_temporal(df_diario)
 #Plotagem dos inversores
-fig0 = px.line(df_diario,x='Tempo',y='PR diario',color='Inversor')
+fig0 = px.line(df_filtrado,x='Tempo',y='PR diario',color='Inversor')
 st.plotly_chart(fig0)
 inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
-df_filtrado = df_diario[df_diario['Inversor'] == inversor]
+df_filtrado = df_filtrado[df_filtrado['Inversor'] == inversor]
 # # Agrupamento DataFrame por Mês
 # df_mensal = df_diario.groupby('Ano_mes', as_index=False)[['Potencia Ativa(kW) prevista', 'Potencia Ativa(kW)']].sum()
 # df_mensal['PR mensal'] = df_mensal['Potencia Ativa(kW)'] / df_mensal['Potencia Ativa(kW) prevista']
 
-df_filtrado = filtro_temporal(df_filtrado)
 
 # Gráfico de barras do PR diário
 fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')

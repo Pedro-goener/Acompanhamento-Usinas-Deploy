@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,text
 import streamlit as st
 def load_and_prepare_data(db_config: dict, query: str) -> pd.DataFrame:
     connection_string = (
@@ -26,3 +26,28 @@ usinas_dict = {
     'jgr01':5,
     'ara01':6
 }
+
+
+def update_data(db_config, update_id, observacao):
+
+    connection_string = (
+        f"postgresql://{db_config['user']}:{db_config['password']}@"
+        f"{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
+    )
+
+    engine = create_engine(connection_string)
+
+    query = text("""
+        UPDATE tabela_ocorrencias 
+        SET "Verificado" = NOT "Verificado",
+            "Observacao" = :observacao 
+        WHERE index = :update_id
+        """)
+    params = {
+        'observacao': observacao,
+        'update_id': int(update_id)
+    }
+    with engine.connect() as connection:
+        connection.execute(query,params)
+        connection.commit()
+

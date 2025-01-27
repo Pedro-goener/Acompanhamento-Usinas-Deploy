@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
 from PIL import Image
+from pygments.lexer import default
+from sqlalchemy.orm.sync import update
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import plotly.express as px
 import numpy as np
@@ -8,8 +10,9 @@ import os
 import sys
 # Adicione o diretório 'utils' ao caminho de importação
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
-from interacao_db import load_and_prepare_data,db_config,usinas_dict
+from interacao_db import load_and_prepare_data,db_config,usinas_dict,update_data
 from plotagem import plot_time_series
+from filtros import filtro_temporal
 #Encontra diretório atual principal
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
@@ -46,10 +49,14 @@ usina_response = AgGrid(
 )
 #Exibir tabela da usina selecionada
 if usina_response['selected_rows'] is not None:
-    usina = usina_response['selected_rows']['Usina'][0]
+    usina = usina_response['selected_rows']['Usina'].iloc[0]
     inversor = st.selectbox('Selecione o inversor',[1,2,3,4,5,6,7,8,9,10])
     #Leitura do Arquivo e conversão para datetime
-    query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}'
+    check = st.checkbox('Exibir histórico?')
+    if check:
+        query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}'
+    else:
+        query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]} AND "Verificado" = FALSE'
     df = load_and_prepare_data(db_config,query)
     df['Inicio'] = pd.to_datetime(df['Inicio'])
     df['Fim'] = pd.to_datetime(df['Fim'])
@@ -58,8 +65,8 @@ if usina_response['selected_rows'] is not None:
     status_selecionados = st.multiselect('Selecione o tipo de ocorrência',status,default=df['Status'].unique())
     df_filtrado  = df[df['Status'].isin(status_selecionados)]
     #Filtro Temporal
-    data_selecionada = st.date_input('Selecione o intervalo temporal',value=(df['Inicio'].min(), df['Inicio'].max()))
-    if isinstance(data_selecionada,tuple) and len(data_selecionada) == 2:
+    data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df['Inicio'].min(), df['Inicio'].max()))
+    if isinstance(data_selecionada, tuple) and len(data_selecionada) == 2:
         # Converter as datas selecionadas para datetime para realizar a comparação
         ini, fim = map(pd.to_datetime, data_selecionada)
         # Filtrar o DataFrame pelo intervalo de datas
@@ -69,19 +76,42 @@ if usina_response['selected_rows'] is not None:
         data_unica = pd.to_datetime(data_selecionada[0])  # Pegue apenas a primeira data
         mask = df_filtrado['Inicio'].dt.date == data_unica.date()  # Compare as datas
         df_filtrado = df_filtrado[mask]
+
+    # Inicializando o session_state
+    if 'df_filtrado' not in st.session_state:
+        # Inicializa o DataFrame filtrado apenas na primeira vez
+        st.session_state.df_filtrado = df_filtrado
+
     #Criação dataframe interativo
     gb = GridOptionsBuilder.from_dataframe(df_filtrado)
     gb.configure_selection('single')
+    gb.configure_column('Verificado',editable = True)
+    gb.configure_column('Usina_id',hide=True)
+    gb.configure_column('Inversor',hide=True)
+    gb.configure_column('index', hide=True)
     grid_options = gb.build()
-
+    #Exibição da tabela
     response = AgGrid(
         df_filtrado,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
         theme='streamlit',
         height=300,
         width='100%',
     )
+    #Interação usuário
+    observacao = st.text_input('Observação da ocorrência',max_chars=300,placeholder='Digite aqui...',
+                               value=st.session_state.get('observacao', ''))
+    submit = st.button('Enviar atualização')
+    #Atualizar tabela
+    if submit:
+        if response['data'] is not None:
+            novo_df = response['data'].reset_index()
+            df_filtrado = df_filtrado.reset_index()
+            id_update = novo_df.loc[novo_df['Verificado'] != df_filtrado['Verificado'],'index'].iloc[0]
+            update_data(db_config,id_update,observacao)
+            st.session_state.observacao = observacao
+            st.success('Atualização enviada com sucesso!')
 
     #Caso selecione uma linha, exibir série temporal
     if not response['selected_rows'] is None:
