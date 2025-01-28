@@ -77,47 +77,53 @@ if usina_response['selected_rows'] is not None:
         mask = df_filtrado['Inicio'].dt.date == data_unica.date()  # Compare as datas
         df_filtrado = df_filtrado[mask]
 
-    # Inicializando o session_state
-    if 'df_filtrado' not in st.session_state:
-        # Inicializa o DataFrame filtrado apenas na primeira vez
-        st.session_state.df_filtrado = df_filtrado
+    if "edited_df" not in st.session_state:
+        st.session_state.edited_df = df_filtrado
 
-    #Criação dataframe interativo
-    gb = GridOptionsBuilder.from_dataframe(df_filtrado)
-    gb.configure_selection('single')
-    gb.configure_column('Verificado',editable = True)
-    gb.configure_column('Usina_id',hide=True)
-    gb.configure_column('Inversor',hide=True)
-    gb.configure_column('index', hide=True)
-    grid_options = gb.build()
-    #Exibição da tabela
-    response = AgGrid(
-        df_filtrado,
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
-        theme='streamlit',
-        height=300,
-        width='100%',
+    if "selected_row" not in st.session_state:
+        st.session_state.selected_row = None
+
+    #Colunas ocultas
+    columns_to_hide = ['Inversor','Usina_id','index']
+    edited_df = df_filtrado.drop(columns = columns_to_hide)
+    #Colunas não editáveis
+    disabled_columns = [col for col in edited_df.columns if col != "Verificado"]
+
+    # Exibição interativa com edição
+    edited_df = st.data_editor(
+        edited_df,
+        column_config={
+            "Verificado": st.column_config.CheckboxColumn("Verificado"),
+        },
+        disabled=disabled_columns,
+        on_change=lambda: st.session_state.update({"selected_row": None}),
+        use_container_width=True
     )
-    #Interação usuário
-    observacao = st.text_input('Observação da ocorrência',max_chars=300,placeholder='Digite aqui...',
-                               value=st.session_state.get('observacao', ''))
+    # Atualizar o estado da sessão com o DataFrame editado
+    st.session_state.edited_df = pd.concat([edited_df, df_filtrado[columns_to_hide]], axis=1)
+
+    #Caixa de texto e botão de submissão
+    observacao = st.text_input('Observação da ocorrência', max_chars=300, placeholder='Digite aqui...')
     submit = st.button('Enviar atualização')
-    #Atualizar tabela
     if submit:
-        if response['data'] is not None:
-            novo_df = response['data'].reset_index()
-            df_filtrado = df_filtrado.reset_index()
+        if edited_df is not None:
+            novo_df = pd.concat([edited_df,df_filtrado[columns_to_hide]], axis=1)
             id_update = novo_df.loc[novo_df['Verificado'] != df_filtrado['Verificado'],'index'].iloc[0]
             update_data(db_config,id_update,observacao)
             st.session_state.observacao = observacao
             st.success('Atualização enviada com sucesso!')
 
-    #Caso selecione uma linha, exibir série temporal
-    if not response['selected_rows'] is None:
+    selected_row_index = st.selectbox(
+        "Linha selecionada (índice):",
+        options=[None] + list(edited_df.index),  # Índices das linhas disponíveis
+        key="row_selector"
+    )
+    #Seleção de linha única
+    if selected_row_index is not None:
         df_p = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}')
-        ini = pd.to_datetime(response['selected_rows']['Inicio']).dt.date[0]
-        fim = pd.to_datetime(response['selected_rows']['Fim']).dt.date[0]
+        ini = pd.to_datetime(edited_df.loc[selected_row_index,'Inicio']).date()
+        fim = pd.to_datetime(edited_df.loc[selected_row_index,'Fim']).date()
+        df_p['Tempo'] = pd.to_datetime(df_p['Tempo'])
         if ini < fim:
             df_p_filtrado = df_p[(df_p['Tempo'].dt.date >= ini) & (df_p['Tempo'].dt.date <= fim)]
         elif ini == fim:
