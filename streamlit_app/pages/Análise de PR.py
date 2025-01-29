@@ -49,9 +49,6 @@ df_filtrado = df_filtrado[df_filtrado['Inversor'] == inversor]
 
 
 # Gráfico de barras do PR diário
-df_filtrado['PR diario'] = pd.to_numeric(df_filtrado['PR diario'], errors='coerce')
-st.write(df_filtrado[['Tempo', 'PR diario']].dtypes)
-st.write(df_filtrado[['Tempo', 'PR diario']].head())
 fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')
 fig1.update_layout(
     shapes=[
@@ -64,17 +61,17 @@ fig1.update_layout(
     ]
 )
 fig1.update_traces(marker=dict(color='#009F98'))
-
-# Exibindo gráfico interativo
-selected_points = plotly_events(fig1)
-
-# Se houver clique em uma barra
-if selected_points:
-    data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
-    df_temporal = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]}')
-    df_temporal['Tempo'] = pd.to_datetime(df_temporal['Tempo'])
-    df_temporal = df_temporal[df_temporal['Tempo'].dt.date == data_selecionada]
-    plot_time_series(df_temporal)
+st.plotly_chart(fig1)
+# # Exibindo gráfico interativo
+# selected_points = plotly_events(fig1)
+#
+# # Se houver clique em uma barra
+# if selected_points:
+#     data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
+#     df_temporal = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]}')
+#     df_temporal['Tempo'] = pd.to_datetime(df_temporal['Tempo'])
+#     df_temporal = df_temporal[df_temporal['Tempo'].dt.date == data_selecionada]
+#     plot_time_series(df_temporal)
 
 # # Gráfico do PR mensal
 # df_mensal['Ano_mes'] = df_mensal['Ano_mes'].astype(str)
