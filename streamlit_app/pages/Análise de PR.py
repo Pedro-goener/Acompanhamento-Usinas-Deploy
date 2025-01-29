@@ -48,19 +48,19 @@ df_filtrado = df_filtrado[df_filtrado['Inversor'] == inversor]
 # df_mensal['PR mensal'] = df_mensal['Potencia Ativa(kW)'] / df_mensal['Potencia Ativa(kW) prevista']
 
 
-# # Gráfico de barras do PR diário
-# fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')
-# fig1.update_layout(
-#     shapes=[
-#         dict(
-#             type="line",
-#             x0=df_filtrado['Tempo'].min(), x1=df_filtrado['Tempo'].max(),
-#             y0=1, y1=1,
-#             line=dict(color="black", width=2, dash="dash"),
-#         )
-#     ]
-# )
-# fig1.update_traces(marker=dict(color='#009F98'))
+# Gráfico de barras do PR diário
+fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')
+fig1.update_layout(
+    shapes=[
+        dict(
+            type="line",
+            x0=df_filtrado['Tempo'].min(), x1=df_filtrado['Tempo'].max(),
+            y0=1, y1=1,
+            line=dict(color="black", width=2, dash="dash"),
+        )
+    ]
+)
+fig1.update_traces(marker=dict(color='#009F98'))
 
 # Exibindo gráfico interativo
 #selected_points = plotly_events(fig0)
