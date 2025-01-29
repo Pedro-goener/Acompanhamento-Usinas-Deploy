@@ -61,7 +61,7 @@ fig1.update_layout(
     ]
 )
 fig1.update_traces(marker=dict(color='#009F98'))
-
+st.plotly_chart(fig1)
 # Exibindo gráfico interativo
 #selected_points = plotly_events(fig0)
 
