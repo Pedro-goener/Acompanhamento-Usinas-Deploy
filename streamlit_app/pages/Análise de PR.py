@@ -50,6 +50,8 @@ df_filtrado = df_filtrado[df_filtrado['Inversor'] == inversor]
 
 # Gráfico de barras do PR diário
 df_filtrado['PR diario'] = pd.to_numeric(df_filtrado['PR diario'], errors='coerce')
+st.write(df_filtrado[['Tempo', 'PR diario']].dtypes)
+st.write(df_filtrado[['Tempo', 'PR diario']].head())
 fig1 = px.bar(df_filtrado, x='Tempo', y='PR diario')
 fig1.update_layout(
     shapes=[
