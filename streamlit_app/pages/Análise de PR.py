@@ -61,17 +61,17 @@ fig1.update_layout(
     ]
 )
 fig1.update_traces(marker=dict(color='#009F98'))
-st.plotly_chart(fig1)
-# # Exibindo gráfico interativo
-# selected_points = plotly_events(fig1)
-#
-# # Se houver clique em uma barra
-# if selected_points:
-#     data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
-#     df_temporal = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]}')
-#     df_temporal['Tempo'] = pd.to_datetime(df_temporal['Tempo'])
-#     df_temporal = df_temporal[df_temporal['Tempo'].dt.date == data_selecionada]
-#     plot_time_series(df_temporal)
+
+# Exibindo gráfico interativo
+selected_points = plotly_events(fig1)
+
+# Se houver clique em uma barra
+if selected_points:
+    data_selecionada = pd.to_datetime(selected_points[0]['x']).date()
+    df_temporal = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id" = {usinas_dict[usina]}')
+    df_temporal['Tempo'] = pd.to_datetime(df_temporal['Tempo'])
+    df_temporal = df_temporal[df_temporal['Tempo'].dt.date == data_selecionada]
+    plot_time_series(df_temporal)
 
 # # Gráfico do PR mensal
 # df_mensal['Ano_mes'] = df_mensal['Ano_mes'].astype(str)

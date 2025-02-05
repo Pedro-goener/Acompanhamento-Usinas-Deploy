@@ -12,7 +12,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Utils')))
 from interacao_db import load_and_prepare_data,db_config,usinas_dict,update_data
 from plotagem import plot_time_series
-from filtros import filtro_temporal
+
 #Encontra diretório atual principal
 current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 #Achando o caminho do icone
@@ -25,12 +25,13 @@ img = Image.open(img_path)
 img = img.resize((int(img.width * (50 / img.height)), 50))  # Altura = 30 pixels
 # Exibir a imagem redimensionada
 st.image(img)
-
 st.title('Tabela de Ocorrências')
+
 #Explicação perdas
 st.markdown(f"<h6>Perda total: No mínimo 1 hora com Potencia Ativa nula durante o dia ou PR<0.1 </h6>", unsafe_allow_html=True)
 st.markdown(f"<h6>Perda dissipada: 3 dias seguidos com PR < 0.95 </h6>", unsafe_allow_html=True)
 st.markdown(f"<h6>Dados faltantes: No mínimo 1 dia sem dados </h6>", unsafe_allow_html=True)
+
 #Tabela inicial de usinas
 st.markdown(f"<h3>Selecione a Usina </h3>", unsafe_allow_html=True)
 usina_df = load_and_prepare_data(db_config,'SELECT * FROM tabela_usinas')
@@ -47,6 +48,7 @@ usina_response = AgGrid(
     height=200,
     width='100%',
 )
+
 #Exibir tabela de inversores da usina selecionada
 if usina_response['selected_rows'] is not None:
     usina = usina_response['selected_rows']['Usina'].iloc[0]
@@ -64,80 +66,77 @@ if usina_response['selected_rows'] is not None:
         height=200,
         width='100%',
     )
-    if inv_response['selected_rows'] is not None:
+
+
+    # Encapsulando conteudo dinamico
+    def load_dynamic_content():
         inversor = inv_response['selected_rows']['Inversor'].iloc[0]
-        #Leitura do Arquivo e conversão para datetime
-        check = st.checkbox('Exibir histórico?')
+        check = st.checkbox('Exibir histórico?', key='history_checkbox')
         if check:
             query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}'
         else:
             query = f'SELECT * FROM tabela_ocorrencias WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]} AND "Verificado" = FALSE'
-        df = load_and_prepare_data(db_config,query)
+
+        df = load_and_prepare_data(db_config, query)
         df['Inicio'] = pd.to_datetime(df['Inicio'])
         df['Fim'] = pd.to_datetime(df['Fim'])
-        #Filtro de status
-        status = df['Status'].unique()
-        status_selecionados = st.multiselect('Selecione o tipo de ocorrência',status,default=df['Status'].unique())
-        df_filtrado  = df[df['Status'].isin(status_selecionados)]
-        #Filtro Temporal
-        data_selecionada = st.date_input('Selecione o intervalo temporal', value=(df['Inicio'].min(), df['Inicio'].max()))
-        if isinstance(data_selecionada, tuple) and len(data_selecionada) == 2:
-            # Converter as datas selecionadas para datetime para realizar a comparação
-            ini, fim = map(pd.to_datetime, data_selecionada)
-            # Filtrar o DataFrame pelo intervalo de datas
-            df_filtrado = df_filtrado[(df_filtrado['Inicio'] >= ini) & (df_filtrado['Inicio'] <= fim)]
 
+        status = df['Status'].unique()
+        status_selecionados = st.multiselect('Selecione o tipo de ocorrência', status, default=df['Status'].unique(),
+                                             key='status_multiselect')
+        df_filtrado = df[df['Status'].isin(status_selecionados)]
+
+        data_selecionada = st.date_input('Selecione o intervalo temporal',
+                                         value=(df['Inicio'].min(), df['Inicio'].max()),
+                                         key='date_input')
+
+        if isinstance(data_selecionada, tuple) and len(data_selecionada) == 2:
+            ini, fim = map(pd.to_datetime, data_selecionada)
+            df_filtrado = df_filtrado[(df_filtrado['Inicio'] >= ini) & (df_filtrado['Inicio'] <= fim)]
         else:
-            data_unica = pd.to_datetime(data_selecionada[0])  # Pegue apenas a primeira data
-            mask = df_filtrado['Inicio'].dt.date == data_unica.date()  # Compare as datas
+            data_unica = pd.to_datetime(data_selecionada[0])
+            mask = df_filtrado['Inicio'].dt.date == data_unica.date()
             df_filtrado = df_filtrado[mask]
 
-        if "edited_df" not in st.session_state:
-            st.session_state.edited_df = df_filtrado
-
-        if "selected_row" not in st.session_state:
-            st.session_state.selected_row = None
-
-        #Colunas ocultas
-        columns_to_hide = ['Inversor','Usina_id','index']
-        edited_df = df_filtrado.drop(columns = columns_to_hide)
-        #Colunas não editáveis
+        columns_to_hide = ['Inversor', 'Usina_id', 'index']
+        edited_df = df_filtrado.drop(columns=columns_to_hide)
         disabled_columns = [col for col in edited_df.columns if col != "Verificado"]
 
-        # Exibição interativa com edição
         edited_df = st.data_editor(
             edited_df,
-            column_config={
-                "Verificado": st.column_config.CheckboxColumn("Verificado"),
-            },
+            column_config={"Verificado": st.column_config.CheckboxColumn("Verificado")},
             disabled=disabled_columns,
-            on_change=lambda: st.session_state.update({"selected_row": None}),
-            use_container_width=True
+            use_container_width=True,
+            key='data_editor'
         )
-        # Atualizar o estado da sessão com o DataFrame editado
+
         st.session_state.edited_df = pd.concat([edited_df, df_filtrado[columns_to_hide]], axis=1)
 
-        #Caixa de texto e botão de submissão
-        observacao = st.text_input('Observação da ocorrência', max_chars=300, placeholder='Digite aqui...')
-        submit = st.button('Enviar atualização')
-        if submit:
+        observacao = st.text_input('Observação da ocorrência',
+                                   max_chars=300,
+                                   placeholder='Digite aqui...',
+                                   key='observacao_input')
+
+        if st.button('Enviar atualização', key='submit_button'):
             if edited_df is not None:
-                novo_df = pd.concat([edited_df,df_filtrado[columns_to_hide]], axis=1)
-                id_update = novo_df.loc[novo_df['Verificado'] != df_filtrado['Verificado'],'index'].iloc[0]
-                update_data(db_config,id_update,observacao)
-                st.session_state.observacao = observacao
+                novo_df = pd.concat([edited_df, df_filtrado[columns_to_hide]], axis=1)
+                id_update = novo_df.loc[novo_df['Verificado'] != df_filtrado['Verificado'], 'index'].iloc[0]
+                update_data(db_config, id_update, observacao)
                 st.success('Atualização enviada com sucesso!')
+                st.session_state.needs_rerun = True
+                st.rerun()
 
         selected_row_index = st.selectbox(
             "Linha selecionada (índice):",
-            options=[None] + list(edited_df.index),  # Índices das linhas disponíveis
+            options=[None] + list(edited_df.index),
             key="row_selector"
         )
-        #Seleção de linha única
+
         if selected_row_index is not None:
-            df_p = load_and_prepare_data(db_config,f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}')
-            ini = pd.to_datetime(edited_df.loc[selected_row_index,'Inicio']).date()
-            fim = pd.to_datetime(edited_df.loc[selected_row_index,'Fim']).date()
+            df_p = load_and_prepare_data(db_config,
+                                         f'SELECT * FROM performance_data WHERE "Inversor" = {inversor} AND "Usina_id"::INTEGER = {usinas_dict[usina]}')
+            ini = pd.to_datetime(edited_df.loc[selected_row_index, 'Inicio']).date()
+            fim = pd.to_datetime(edited_df.loc[selected_row_index, 'Fim']).date()
             df_p['Tempo'] = pd.to_datetime(df_p['Tempo'])
             if ini < fim:
                 df_p_filtrado = df_p[(df_p['Tempo'].dt.date >= ini) & (df_p['Tempo'].dt.date <= fim)]
@@ -146,3 +145,8 @@ if usina_response['selected_rows'] is not None:
                 df_p_filtrado = df_p[mask]
 
             plot_time_series(df_p_filtrado)
+
+
+    # Executar o conteúdo dinâmico
+    if inv_response['selected_rows'] is not None:
+        load_dynamic_content()
